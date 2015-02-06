@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Pac Mania</title>
+    <link rel="stylesheet" type="text/css" href="css/styles.css">
+    <script type="text/javascript" src="js/jquery-2.1.3.min.js"></script>
+    <script type="text/javascript" src="js/game.js"></script>
+  </head>
+  <body>
+  <script>
+    $(document).ready(game);
+  </script>
+    <h1>PAC MANIA</h1>
+    <table id="scoreboard" class="right">
+      <tr>
+        <th colspan="2">Top Scores</th>
+      </tr>
+      <tr>
+        <th>Initials</th>
+        <th>Score</th>
+      </tr>
+      <tr>
+        <td>GOD</td>
+        <td>1000</td>
+      </tr>
+    <table>
+    <div class="right">
+      Current Score:&nbsp;<input size="5" type="text" readonly id="score" value="0">
+    </div>
+    <canvas id="backdrop" class="center">
+Your browser does not support the HTML5 canvas tag.
+    </canvas>
+    <br /><br />
+    <input class="center" type="button" value="Restart" onclick="game();" />
+    <div>
+      <label>3. keypress() Message :</label><span id="msg-keypress"></span>
+    </div>
+  </body>
+</html>

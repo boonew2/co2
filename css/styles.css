@@ -1,0 +1,16 @@
+.center {
+  padding-left: 0;
+  padding-right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+}
+
+.right{
+padding-right: 10px;
+float: right;
+}
+
+h1 {
+  text-align: center;
+}
