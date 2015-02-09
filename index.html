@@ -3,12 +3,15 @@
   <head>
     <title>Pac Mania</title>
     <link rel="stylesheet" type="text/css" href="css/styles.css">
-    <script type="text/javascript" src="js/jquery-2.1.3.min.js"></script>
     <script type="text/javascript" src="js/game.js"></script>
   </head>
   <body>
   <script>
-    $(document).ready(Game);
+    window.onload = function(){
+      console.log('Window OnLoad Event');
+      var game = new Game();
+      game.start();
+    }
   </script>
     <h1>PAC MANIA</h1>
     <div id='settings' class="left">
@@ -34,8 +37,5 @@ Your browser does not support the HTML5 canvas tag.
     </canvas>
     <br /><br />
     <input class="center" id='restart' type="button" value="Restart" />
-    <!--<div>
-      <label>3. keypress() Message :</label><span id="msg-keypress"></span>
-    </div>-->
   </body>
 </html>
