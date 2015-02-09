@@ -1,6 +1,59 @@
-Point = function(x_bound,y_bound){
-  this.radius    = 5;
-  this.xy        = [get_random_int(this.radius,x_bound + this.radius), get_random_int(this.radius, y_bound - this.radius)]
+Settings = function(id){
+  this.settings_div = document.getElementById(id);
+  this.settings = {'game_width'     : {'default': 800, 'min': 200, 'max': 1200},
+                   'game_height'    : {'default': 600, 'min': 200, 'max': 1200},
+                   'game_color'     : {'default': 'black'},
+                   'char_radius'    : {'default': 20, 'min': 10, 'max': 150},
+                   'char_color'     : {'default': 'yellow'},
+                   'char_speed'     : {'default': 5, 'min': 2, 'max': 30},
+                   'char_lives'     : {'default': 3, 'min': 1, 'max': 10},
+                   'ray_length'     : {'default': 200, 'min': 50, 'max': 400},
+                   'ray_speed_min'  : {'default': 5, 'min': 1, 'max': 20},
+                   'ray_speed_max'  : {'default': 8, 'min': 2, 'max': 30},
+                   'ray_max'        : {'default': 50,'min': 20,'max': 100},
+                   'point_radius'   : {'default': 5, 'min': 2, 'max': 100}};
+
+  this.get_setting = function(name){
+    value = document.getElementById(name).value;
+    if('min' in this.settings[name]){
+      value = parseInt(value);
+      if(value < this.settings[name]['min'] || value > this.settings[name]['max']){
+        alert(name + ' should be between ' + this.settings[name]['min'] + ' and ' + this.settings[name]['max']);
+        return false;
+      }
+    }
+    return value;
+  }
+
+  this.create_table = function(){
+    if(document.getElementById(this.settings_div+'_table') == null){
+      var table   = document.createElement('table');
+      table.setAttribute('id',this.settings_div+'_table');
+      for(var key in this.settings){
+        var row     = document.createElement('tr');
+        var setting = document.createElement('th');
+        var value   = document.createElement('td');
+        var input   = document.createElement('input');
+        setting.appendChild(document.createTextNode(key));
+        input.setAttribute('type','input');
+        input.setAttribute('size', 5);
+        input.setAttribute('id',key);
+        input.setAttribute('value',this.settings[key]['default']);
+        value.appendChild(input);
+        row.appendChild(setting);
+        row.appendChild(value);
+        table.appendChild(row);
+      }
+      this.settings_div.appendChild(table);
+    }
+  }
+
+  this.create_table();
+}
+
+Point = function(radius,x_bound,y_bound){
+  this.radius    = radius;
+  this.xy        = [get_random_int(this.radius,x_bound - this.radius), get_random_int(this.radius, y_bound - this.radius)]
   this.color     = 'white';
   //this.point_map = 
   this.draw = function(ctx){
@@ -11,11 +64,11 @@ Point = function(x_bound,y_bound){
   }
 }
 
-Laser = function(x,y,direction,x_bound,y_bound){
-  this.speed     = get_random_int(5,8);
+Ray = function(x,y,direction,x_bound,y_bound, speed_range, length){
+  this.speed     = get_random_int(speed_range[0],speed_range[1]);
   this.direction = direction;
   this.color     = 'red';
-  this.length    = 200;
+  this.length    = length;
   this.xy_bound  = [x_bound,y_bound];
 
   this.start_map = {37: [x_bound,y],
@@ -68,13 +121,14 @@ Laser = function(x,y,direction,x_bound,y_bound){
   }
 }
 
-Pacman = function(x,y,r,color,x_bound,y_bound,bgcolor){
+Pacman = function(x,y,r,speed,color,x_bound,y_bound,bgcolor){
+  //alert(bgcolor.value);
   this.xy       = [x,y];
   this.radius   = r;
   //this.xy_bound = [x_bound,y_bound];
   this.color    = color;
-  this.speed    = 5;
-  this.bgcolor  = bgcolor;
+  this.speed    = speed;
+  this.bgcolor  = bgcolor
   /* 37 = LEFT
      38 = UP
      39 = RIGHT
@@ -132,13 +186,17 @@ Pacman = function(x,y,r,color,x_bound,y_bound,bgcolor){
     }
   }
 
+  this.animate = function(){
+    if(this.phase < this.mod_map.length-1) this.phase++
+    else this.phase = 0;
+  }
+
   this.move = function(keycode){
     this.xy = [this.xy[0] + this.dpad_map[keycode][0], this.xy[1] + this.dpad_map[code][1]];
     this.direction = keycode;
     this.wrap_it();
-    if(this.phase < this.mod_map.length-1) this.phase++
-    else this.phase = 0;
-  }
+    this.animate();
+  } 
 }
 
 Rectangle = function(x,y,w,h,color){
@@ -166,76 +224,82 @@ function get_random_int(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-
-game = function(){
-  var game_width  = 800;
-  var game_height = 600;
-  var game_color  = 'black';
-  var char_radius = 20;
-  var char_color  = 'yellow';
-  var radius_squared = char_radius * char_radius;
-  this.c = document.getElementById('backdrop');
-  this.c.height = game_height;
-  this.c.width  = game_width;
-  this.context = this.c.getContext('2d');
-  this.backdrop = new Rectangle(0,0,game_width,game_height,game_color);
-  this.pacman = new Pacman(this.backdrop.w/2,this.backdrop.h/2,char_radius,char_color,game_width,game_height,game_color);
-  this.point = new Point(game_width, game_height);
-  this.lasers = [];
-  this.laser_max = 50;
-  this.scoreboard = new Scoreboard();
-
+Game = function(){
+  this.settings = new Settings('settings');
+  this.init_settings = function(){
+    this.game_width  = this.settings.get_setting('game_width');
+    this.game_height = this.settings.get_setting('game_height');
+    this.game_color  = this.settings.get_setting('game_color');
+    this.char_radius = this.settings.get_setting('char_radius');
+    this.char_color  = this.settings.get_setting('char_color');
+    this.char_speed  = this.settings.get_setting('char_speed');
+    this.char_lives  = this.settings.get_setting('char_lives');
+    this.radius_squared = this.char_radius * this.char_radius;
+    this.ray_speed_range = [this.settings.get_setting('ray_speed_min'),this.settings.get_setting('ray_speed_max')];
+    this.ray_length = this.settings.get_setting('ray_length');
+    this.point_radius = this.settings.get_setting('point_radius');
+    this.c = document.getElementById('backdrop');
+    this.c.height = this.game_height;
+    this.c.width  = this.game_width;
+    this.context = this.c.getContext('2d');
+    this.backdrop = new Rectangle(0,0,this.game_width,this.game_height,this.game_color);
+    this.pacman = new Pacman(this.backdrop.w/2,this.backdrop.h/2,this.char_radius,this.char_speed,this.char_color,this.game_width,this.game_height,this.game_color);
+    this.point = new Point(this.point_radius,this.game_width, this.game_height);
+    this.rays = [];
+    this.ray_max = this.settings.get_setting('ray_max');
+    //this.scoreboard = new Scoreboard();
+  }
+  this.init_settings();
   this.draw = function(){
     this.backdrop.draw(this.context);
-    this.point.draw(this.context);
-    for(var i = 0; i < this.lasers.length; i++){
-      this.lasers[i].draw(this.context);
-    }
     this.pacman.draw(this.context);
+    for(var i = 0; i < this.rays.length; i++){
+      this.rays[i].draw(this.context);
+    }
+    this.point.draw(this.context);
   }
 
-  this.draw(this.context);
+  this.draw();
 
   this.got_it = function(){
-    if(Math.pow(this.pacman.xy[0] - this.point.xy[0], 2) + Math.pow(this.pacman.xy[1] - this.point.xy[1], 2) <= this.point.radius+5*this.point.radius+5)
+    if(Math.pow(this.pacman.xy[0] - this.point.xy[0], 2) + Math.pow(this.pacman.xy[1] - this.point.xy[1], 2) <= (this.point_radius+5)*(this.point_radius+5))
       return true;
     return false;
   }
 
   this.got_hit = function(){
-    //rad_squared = this.pacman.radius * this.pacman.radius;
-    for(var i = 0; i < this.lasers.length; i++){
-      if (this.lasers[i].xy[0] > this.lasers[i].end_xy[0] || this.lasers[i].xy[1] > this.lasers[i].end_xy[1]){
-        start_xy = this.lasers[i].end_xy;
-        end_xy = this.lasers[i].xy;
+    for(var i = 0; i < this.rays.length; i++){
+      if (this.rays[i].xy[0] > this.rays[i].end_xy[0] || this.rays[i].xy[1] > this.rays[i].end_xy[1]){
+        start_xy = this.rays[i].end_xy;
+        end_xy = this.rays[i].xy;
       }
       else{
-        start_xy = this.lasers[i].xy;
-        end_xy = this.lasers[i].end_xy;
+        start_xy = this.rays[i].xy;
+        end_xy = this.rays[i].end_xy;
       }
-      if(this.lasers[i].direction == 37 || this.lasers[i].direction == 39){
+      if(this.rays[i].direction == 37 || this.rays[i].direction == 39){
         perp_point = [this.pacman.xy[0], start_xy[1]];
         if(perp_point[0] > start_xy[0] && perp_point[0] < end_xy[0]){
-          if(Math.pow(perp_point[1] - this.pacman.xy[1],2) <= Math.pow(this.pacman.radius,2))
+          if(Math.pow(perp_point[1] - this.pacman.xy[1],2) <= this.radius_squared)
             return true;
         }
         else{
           start_dist = Math.pow(perp_point[1] - this.pacman.xy[1],2)+Math.pow(perp_point[0] - start_xy[0],2);
           end_dist   = Math.pow(perp_point[1] - this.pacman.xy[1],2)+Math.pow(perp_point[0] - end_xy[0],2);
-          if(start_dist <= radius_squared || end_dist <= radius_squared)
+          if(start_dist <= this.radius_squared || end_dist <= this.radius_squared)
             return true;
         }
       }
-      else if(this.lasers[i].direction == 38 || this.lasers[i].direction){
+      else if(this.rays[i].direction == 38 || this.rays[i].direction == 40){
         perp_point = [start_xy[0], this.pacman.xy[1]];
         if(perp_point[1] > start_xy[1] && perp_point[1] < end_xy[1]){
-          if(Math.pow(perp_point[0] - this.pacman.xy[0],2) <= Math.pow(this.pacman.radius,2))
+          if(Math.pow(perp_point[0] - this.pacman.xy[0],2) <= this.radius_squared)
             return true;
         }
         else{
           start_dist = Math.pow(perp_point[0] - this.pacman.xy[0],2)+Math.pow(perp_point[1] - start_xy[1],2);
           end_dist   = Math.pow(perp_point[0] - this.pacman.xy[0],2)+Math.pow(perp_point[1] - end_xy[1],2);
-          if(start_dist <= radius_squared || end_dist <= radius_squared)
+          if(start_dist <= this.radius_squared || end_dist <= this.radius_squared)
             return true;
         }
       }
@@ -244,24 +308,32 @@ game = function(){
   }
 
   this.reset = function(){
-    for(var i = 0; i < this.lasers.length; i++){
-      this.lasers[i].wrap_it();
+    for(var i = 0; i < this.rays.length; i++){
+      this.rays[i].wrap_it();
     }
-    this.pacman = new Pacman(this.backdrop.w/2,this.backdrop.h/2,char_radius,char_color,game_width,game_height,game_color);
+    this.pacman = new Pacman(this.backdrop.w/2,this.backdrop.h/2,this.char_radius,this.char_speed,this.char_color,this.game_width,this.game_height,this.game_color);
   }
+
+  $('#restart').click(function(){
+    this.init_settings();
+  });
 
   $(document).keydown(function(event){
     code = parseInt(event.keycode || event.which);
-    if(code <= 40 && code >= 37){
-      this.pacman.move(code);
-      for(var i = 0; i < this.lasers.length; i++){
-        this.lasers[i].move();
+    if((code <= 40 && code >= 37) || (code == 32)){
+      if(code != 32) this.pacman.move(code);
+      else this.pacman.animate();
+      for(var i = 0; i < this.rays.length; i++){
+        this.rays[i].move();
       }
       if(this.got_it()){
-        this.lasers.push(new Laser(this.pacman.xy[0],this.pacman.xy[1],this.pacman.direction,this.backdrop.w,this.backdrop.h));
-        this.point = new Point(this.backdrop.w, this.backdrop.h);
+        if(this.rays.length < this.ray_max)
+          this.rays.push(new Ray(this.pacman.xy[0],this.pacman.xy[1],this.pacman.direction,this.backdrop.w,this.backdrop.h,this.ray_speed_range,this.ray_length));
+        this.point = new Point(this.point_radius,this.backdrop.w, this.backdrop.h);
       }
       if(this.got_hit()){
+        if(this.char_lives > 0) this.char_lives--;
+        else{ alert('GAME OVER'); this.init_settings();}
         this.reset();
       }
       this.draw(this.context);
@@ -269,3 +341,4 @@ game = function(){
     //$('#msg-keypress').html('keypress() is triggered!, keyCode = ' + event.keyCode + ' which = ' + event.which)
   });
 }
+

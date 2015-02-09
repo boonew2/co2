@@ -8,9 +8,11 @@
   </head>
   <body>
   <script>
-    $(document).ready(game);
+    $(document).ready(Game);
   </script>
     <h1>PAC MANIA</h1>
+    <div id='settings' class="left">
+    </div>
     <table id="scoreboard" class="right">
       <tr>
         <th colspan="2">Top Scores</th>
@@ -31,9 +33,9 @@
 Your browser does not support the HTML5 canvas tag.
     </canvas>
     <br /><br />
-    <input class="center" type="button" value="Restart" onclick="game();" />
-    <div>
+    <input class="center" id='restart' type="button" value="Restart" />
+    <!--<div>
       <label>3. keypress() Message :</label><span id="msg-keypress"></span>
-    </div>
+    </div>-->
   </body>
 </html>

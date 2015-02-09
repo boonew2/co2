@@ -6,6 +6,11 @@
   display: block;
 }
 
+.left{
+padding-left: 10px;
+float: left;
+}
+
 .right{
 padding-right: 10px;
 float: right;
