@@ -258,8 +258,7 @@ ScoreBoard.prototype.create_scores_table = function(){
 
 ScoreBoard.prototype.submit_score = function(score){
   this.top_scores.push(score);
-  this.top_scores.sort();
-  this.top_scores.reverse();
+  this.top_scores.sort(function(a, b){return b-a});
   while(this.top_scores.length > 10){
     this.top_scores.pop();
   }
