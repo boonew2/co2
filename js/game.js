@@ -2,9 +2,9 @@ var Settings = function(id){
   this.settings_div = document.getElementById(id);
   this.settings = {'game_width'     : {'default': 800, 'min': 200, 'max': 1200},
                    'game_height'    : {'default': 600, 'min': 200, 'max': 1200},
-                   'game_color'     : {'default': 'black'},
+                   'game_color'     : {'default': '#000000'},
                    'char_radius'    : {'default': 20, 'min': 10, 'max': 150},
-                   'char_color'     : {'default': 'yellow'},
+                   'char_color'     : {'default': '#FFFF00'},
                    'char_speed'     : {'default': 5, 'min': 2, 'max': 30},
                    'char_lives'     : {'default': 3, 'min': 1, 'max': 10},
                    'ray_length'     : {'default': 200, 'min': 50, 'max': 400},
@@ -41,10 +41,17 @@ Settings.prototype.create_table = function(){
         var value   = document.createElement('td');
         var input   = document.createElement('input');
         setting.appendChild(document.createTextNode(key));
-        input.setAttribute('type','input');
-        input.setAttribute('size', 5);
+        if('min' in this.settings[key]){
+          input.setAttribute('type','range');
+          input.setAttribute('min',this.settings[key]['min']);
+          input.setAttribute('max',this.settings[key]['max']);
+          input.setAttribute('value',this.settings[key]['default']);
+        }
+        else{
+          input.setAttribute('type','color');
+          input.value = this.settings[key]['default'];
+        }
         input.setAttribute('id',key);
-        input.setAttribute('value',this.settings[key]['default']);
         value.appendChild(input);
         row.appendChild(setting);
         row.appendChild(value);
