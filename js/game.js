@@ -10,7 +10,7 @@ var Settings = function(id){
                    'ray_length'     : {'default': 200, 'min': 50, 'max': 400},
                    'ray_speed_min'  : {'default': 5, 'min': 1, 'max': 20},
                    'ray_speed_max'  : {'default': 8, 'min': 2, 'max': 30},
-                   'ray_max'        : {'default': 50,'min': 20,'max': 100},
+                   'ray_max'        : {'default': 50,'min': 10,'max': 100},
                    'point_radius'   : {'default': 5, 'min': 2, 'max': 100}};
 }
 
@@ -236,6 +236,30 @@ var ScoreBoard = function(scores_id){
   this.top_scores = [];
 }
 
+ScoreBoard.prototype.set_cookie = function(){
+  var d = new Date();
+  d.setTime(d.getTime() + (7*24*60*60*1000));
+  var expires = "expires=" + d.toGMTString();
+  document.cookie = "top_scores="+JSON.stringify(this.top_scores)+"; "+expires;
+}
+
+ScoreBoard.prototype.get_cookie = function(){
+  var name = 'top_scores=';
+  var ca = document.cookie.split(';');
+  for(var i = 0; i < ca.length; i++){
+    var c = ca[i];
+    while(c.charAt(0) == ' ') c.substring(1);
+      if(c.indexOf(name) == 0){
+        return JSON.parse(c.substring(name.length,c.length));
+      }
+  }
+  return [];
+}
+
+ScoreBoard.prototype.initiate_scores = function(){
+  this.top_scores = this.get_cookie();
+}
+
 ScoreBoard.prototype.create_scores_table = function(){
   while(this.scores_div.childNodes.length > 0){
     this.scores_div.removeChild(this.scores_div.firstChild);
@@ -269,6 +293,7 @@ ScoreBoard.prototype.submit_score = function(score){
   while(this.top_scores.length > 10){
     this.top_scores.pop();
   }
+  this.set_cookie();
 }
 
 var StatsBoard = function(stats_id){
@@ -345,6 +370,7 @@ Game = function(){
   this.scoreboard = new ScoreBoard('scores');
   this.settings.create_table();
   this.statsboard.create_stats_table();
+  this.scoreboard.initiate_scores();
   this.scoreboard.create_scores_table();
   var instance = this;
 
