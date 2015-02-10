@@ -20,10 +20,15 @@ Settings.prototype.get_setting = function(name){
       value = parseInt(value);
       if(value < this.settings[name]['min'] || value > this.settings[name]['max']){
         alert(name + ' should be between ' + this.settings[name]['min'] + ' and ' + this.settings[name]['max']);
-        return false;
+        document.getElementById(name).value = this.settings[name]['default'];
+        return this.settings[name]['default'];
       }
     }
     return value;
+}
+
+Settings.prototype.get_default = function(name){
+    return this.settings[name]['default'];
 }
 
 Settings.prototype.create_table = function(){
@@ -45,6 +50,16 @@ Settings.prototype.create_table = function(){
         row.appendChild(value);
         table.appendChild(row);
       }
+      var submit_row   = document.createElement('tr');
+      var submit_cell  = document.createElement('td');
+      var submit_input = document.createElement('input');
+      submit_input.type = 'button';
+      submit_input.id = 'restart';
+      submit_input.value = 'Restart';
+      submit_cell.colSpan = '2';
+      submit_cell.appendChild(submit_input);
+      submit_row.appendChild(submit_cell);
+      table.appendChild(submit_row);
       this.settings_div.appendChild(table);
     }
 }
@@ -203,20 +218,115 @@ var Rectangle = function(x,y,w,h,color){
   this.h = h;
   this.color = color;
 }
+
 Rectangle.prototype.draw = function(ctx){
     ctx.fillStyle = this.color;
     ctx.fillRect(this.x, this.y, this.w, this.h);
 }
 
-/*
-Scoreboard = function(){
-  this.score_ele = document.getElementById('score');
-  this.current_score = parseInt(this.score_ele.value);
-  this.change_score = function(points){
-    this.score_ele.value = this.current_score + points;
-    this.current_score = parseInt(this.score_ele.value);
+var ScoreBoard = function(scores_id){
+  this.scores_div = document.getElementById(scores_id);
+  this.top_scores = [];
+}
+
+ScoreBoard.prototype.create_scores_table = function(){
+  while(this.scores_div.childNodes.length > 0){
+    this.scores_div.removeChild(this.scores_div.firstChild);
   }
-}*/
+  var table        = document.createElement('table');
+  var header_row   = document.createElement('tr');
+  var score_header = document.createElement('th');
+
+  score_header.colSpan = '2';
+  score_header.appendChild(document.createTextNode('Top Scores'));
+  header_row.appendChild(score_header);
+  table.appendChild(header_row);
+
+  for(score in this.top_scores){
+    var score_row   = document.createElement('tr');
+    var score_cell  = document.createElement('td');
+    var number_cell = document.createElement('td');
+    index = parseInt(score)+1;
+    number_cell.appendChild(document.createTextNode(index+'.)'));
+    score_cell.appendChild(document.createTextNode(this.top_scores[score]));
+    score_row.appendChild(number_cell);
+    score_row.appendChild(score_cell);
+    table.appendChild(score_row);
+  }
+  this.scores_div.appendChild(table);
+}
+
+ScoreBoard.prototype.submit_score = function(score){
+  this.top_scores.push(score);
+  this.top_scores.sort();
+  this.top_scores.reverse();
+  while(this.top_scores.length > 10){
+    this.top_scores.pop();
+  }
+}
+
+var StatsBoard = function(stats_id){
+  this.stats_div  = document.getElementById(stats_id);
+}
+
+StatsBoard.prototype.create_stats_table = function(){
+  var table       = document.createElement('table');
+  var row         = document.createElement('tr');
+  var score_title = document.createElement('th');
+  var life_title  = document.createElement('th');
+  var laser_title = document.createElement('th');
+  var score_cell  = document.createElement('td');
+  var life_cell   = document.createElement('td');
+  var laser_cell  = document.createElement('td');
+  var score_value = document.createElement('input');
+  var life_value  = document.createElement('input');
+  var laser_value = document.createElement('input');
+
+  life_value.id   = this.stats_div.id+'_life_count';
+  life_value.type = 'text';
+  life_value.readOnly = true;
+  life_value.value = '0';
+
+  score_value.id   = this.stats_div.id+'_score_count';
+  score_value.type = 'text';
+  score_value.readOnly = true;
+  score_value.value = '0';
+
+  laser_value.id   = this.stats_div.id+'_laser_count';
+  laser_value.type = 'text';
+  laser_value.readOnly = true;
+  laser_value.value = '0';
+
+  score_title.appendChild(document.createTextNode('Score:'));
+  life_title.appendChild(document.createTextNode('Lives:'));
+  laser_title.appendChild(document.createTextNode('Lasers:'));
+
+  score_cell.appendChild(score_value);
+  life_cell.appendChild(life_value);
+  laser_cell.appendChild(laser_value);
+  
+  row.appendChild(score_title);
+  row.appendChild(score_cell);
+  row.appendChild(life_title);
+  row.appendChild(life_value);
+  row.appendChild(laser_title);
+  row.appendChild(laser_value);
+
+  table.appendChild(row);
+  this.stats_div.appendChild(table);
+}
+
+StatsBoard.prototype.set_life_count = function(life_count){
+  document.getElementById(this.stats_div.id+'_life_count').value = life_count;
+}
+
+StatsBoard.prototype.set_laser_count = function(laser_count){
+  document.getElementById(this.stats_div.id+'_laser_count').value = laser_count;
+}
+
+StatsBoard.prototype.set_score_count = function(score_count){
+  document.getElementById(this.stats_div.id+'_score_count').value = score_count;
+}
 
 function get_random_int(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -225,7 +335,13 @@ function get_random_int(min, max) {
 Game = function(){
   console.log('Starting instance of Game');
   this.settings = new Settings('settings');
+  this.statsboard = new StatsBoard('stats');
+  this.scoreboard = new ScoreBoard('scores');
+  this.settings.create_table();
+  this.statsboard.create_stats_table();
+  this.scoreboard.create_scores_table();
   var instance = this;
+
   this.init_settings = function(){
     console.log('Initializing game settings');
     instance.game_width  = instance.settings.get_setting('game_width');
@@ -238,6 +354,7 @@ Game = function(){
     instance.radius_squared = instance.char_radius * instance.char_radius;
     instance.ray_speed_range = [instance.settings.get_setting('ray_speed_min'),instance.settings.get_setting('ray_speed_max')];
     instance.ray_length = instance.settings.get_setting('ray_length');
+    instance.score = 0;
     instance.point_radius = instance.settings.get_setting('point_radius');
     instance.c = document.getElementById('backdrop');
     instance.c.height = instance.game_height;
@@ -248,7 +365,6 @@ Game = function(){
     instance.point = new Point(instance.point_radius,instance.game_width, instance.game_height);
     instance.rays = [];
     instance.ray_max = instance.settings.get_setting('ray_max');
-    //this.scoreboard = new Scoreboard();
   }
 
   this.draw = function(){
@@ -262,8 +378,10 @@ Game = function(){
 
   this.start = function(){
     console.log('In Game start function');
-    instance.settings.create_table();
+    //instance.settings.create_table();
+    //instance.scoreboard.create_stats_table();
     instance.init_settings();
+    instance.statsboard.set_life_count(instance.char_lives);
     instance.draw();
     document.addEventListener('keydown', instance.handle_input)
     document.getElementById('restart').addEventListener('click', instance.start);
@@ -322,6 +440,12 @@ Game = function(){
     this.pacman = new Pacman(this.backdrop.w/2,this.backdrop.h/2,this.char_radius,this.char_speed,this.char_color,this.game_width,this.game_height,this.game_color);
   }
 
+  this.restart_game = function(){
+    instance.scoreboard.submit_score(instance.score);
+    instance.scoreboard.create_scores_table();
+    instance.init_settings();
+  }
+
   this.handle_input = function(event){
     code = parseInt(event.keycode || event.which);
     if((code <= 40 && code >= 37) || (code == 32)){
@@ -331,13 +455,23 @@ Game = function(){
         instance.rays[i].move();
       }
       if(instance.got_it()){
-        if(instance.rays.length < instance.ray_max)
+        if(instance.rays.length < instance.ray_max){
           instance.rays.push(new Ray(instance.pacman.xy[0],instance.pacman.xy[1],instance.pacman.direction,instance.backdrop.w,instance.backdrop.h,instance.ray_speed_range,instance.ray_length));
+          instance.statsboard.set_laser_count(instance.rays.length);
+        }
         instance.point = new Point(instance.point_radius,instance.backdrop.w, instance.backdrop.h);
+        instance.score += 10;
+        instance.statsboard.set_score_count(instance.score);
       }
       if(instance.got_hit()){
-        if(instance.char_lives > 0) instance.char_lives--;
-        else{ alert('GAME OVER'); instance.init_settings();}
+        if(instance.char_lives > 0){
+          instance.char_lives--;
+          instance.statsboard.set_life_count(instance.char_lives);
+        }
+        else{ 
+          alert('GAME OVER'); 
+          instance.restart_game();
+        }
         instance.reset();
       }
       instance.draw();

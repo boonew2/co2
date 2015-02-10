@@ -14,28 +14,14 @@
     }
   </script>
     <h1>PAC MANIA</h1>
-    <div id='settings' class="left">
-    </div>
-    <table id="scoreboard" class="right">
-      <tr>
-        <th colspan="2">Top Scores</th>
-      </tr>
-      <tr>
-        <th>Initials</th>
-        <th>Score</th>
-      </tr>
-      <tr>
-        <td>GOD</td>
-        <td>1000</td>
-      </tr>
-    <table>
-    <div class="right">
-      Current Score:&nbsp;<input size="5" type="text" readonly id="score" value="0">
-    </div>
+    <form>
+      <div id='settings' class="left"></div>
+    </form>
+    <div id="scores" class="right"></div>
     <canvas id="backdrop" class="center">
 Your browser does not support the HTML5 canvas tag.
     </canvas>
-    <br /><br />
-    <input class="center" id='restart' type="button" value="Restart" />
+    <br />
+    <div id="stats" class="center"></div>
   </body>
 </html>
