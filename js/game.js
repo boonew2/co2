@@ -412,43 +412,43 @@ Game = function(){
 
   this.init_settings = function(){
     console.log('Initializing game settings');
-    instance.game_width  = instance.settings.get_setting('game_width');
-    instance.game_height = instance.settings.get_setting('game_height');
-    instance.game_color  = instance.settings.get_setting('game_color');
-    instance.char_radius = instance.settings.get_setting('char_radius');
-    instance.char_color  = instance.settings.get_setting('char_color');
-    instance.char_speed  = instance.settings.get_setting('char_speed');
-    instance.char_lives  = instance.settings.get_setting('char_lives');
-    instance.radius_squared = instance.char_radius * instance.char_radius;
-    instance.ray_speed_range = [instance.settings.get_setting('ray_speed_min'),instance.settings.get_setting('ray_speed_max')];
-    instance.ray_length = instance.settings.get_setting('ray_length');
-    instance.score = 0;
-    instance.point_radius = instance.settings.get_setting('point_radius');
+    instance.game_width           = instance.settings.get_setting('game_width');
+    instance.game_height          = instance.settings.get_setting('game_height');
+    instance.game_color           = instance.settings.get_setting('game_color');
+    instance.char_radius          = instance.settings.get_setting('char_radius');
+    instance.char_color           = instance.settings.get_setting('char_color');
+    instance.char_speed           = instance.settings.get_setting('char_speed');
+    instance.char_lives           = instance.settings.get_setting('char_lives');
+    instance.radius_squared       = instance.char_radius * instance.char_radius;
+    instance.ray_speed_range      = [instance.settings.get_setting('ray_speed_min'),instance.settings.get_setting('ray_speed_max')];
+    instance.ray_length           = instance.settings.get_setting('ray_length');
+    instance.score                = 0;
+    instance.point_radius         = instance.settings.get_setting('point_radius');
     instance.point_radius_squared = instance.point_radius * instance.point_radius;
-    instance.c = document.getElementById('backdrop');
-    instance.c.height = instance.game_height;
-    instance.c.width  = instance.game_width;
-    instance.context = instance.c.getContext('2d');
-    instance.directions = {'left': 37, 'up': 38, 'right': 39, 'down': 40, 'neutral': 32};
-    instance.backdrop = new Rectangle(0,
-                                      0,
-                                      instance.game_width,
-                                      instance.game_height,
-                                      instance.game_color);
-    instance.pacman = new Pacman(instance.backdrop.w/2,
-                                 instance.backdrop.h/2,
-                                 instance.char_radius,
-                                 instance.char_speed,
-                                 instance.char_color,
-                                 instance.game_width,
-                                 instance.game_height,
-                                 instance.game_color,
-                                 instance.directions);
-    instance.point = new Point(instance.point_radius,
-                               instance.game_width,
-                               instance.game_height);
-    instance.rays = [];
-    instance.ray_max = instance.settings.get_setting('ray_max');
+    instance.c                    = document.getElementById('backdrop');
+    instance.c.height             = instance.game_height;
+    instance.c.width              = instance.game_width;
+    instance.context              = instance.c.getContext('2d');
+    instance.directions           = {'left': 37, 'up': 38, 'right': 39, 'down': 40, 'neutral': 32};
+    instance.backdrop             = new Rectangle(0,
+                                                  0,
+                                                  instance.game_width,
+                                                  instance.game_height,
+                                                  instance.game_color);
+    instance.pacman               = new Pacman(instance.backdrop.w/2,
+                                               instance.backdrop.h/2,
+                                               instance.char_radius,
+                                               instance.char_speed,
+                                               instance.char_color,
+                                               instance.game_width,
+                                               instance.game_height,
+                                               instance.game_color,
+                                               instance.directions);
+    instance.point                = new Point(instance.point_radius,
+                                              instance.game_width,
+                                              instance.game_height);
+    instance.rays                 = [];
+    instance.ray_max              = instance.settings.get_setting('ray_max');
   }
 
   this.draw = function(){
