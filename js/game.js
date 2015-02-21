@@ -1,17 +1,17 @@
 var Settings = function(id){
   this.settings_div = document.getElementById(id);
-  this.settings = {'game_width'     : {'default': 800, 'min': 200, 'max': 1200},
-                   'game_height'    : {'default': 600, 'min': 200, 'max': 1200},
-                   'game_color'     : {'default': '#000000'},
-                   'char_radius'    : {'default': 20, 'min': 10, 'max': 150},
-                   'char_color'     : {'default': '#FFFF00'},
-                   'char_speed'     : {'default': 5, 'min': 2, 'max': 30},
-                   'char_lives'     : {'default': 3, 'min': 1, 'max': 10},
-                   'ray_length'     : {'default': 200, 'min': 50, 'max': 400},
-                   'ray_speed_min'  : {'default': 5, 'min': 1, 'max': 20},
-                   'ray_speed_max'  : {'default': 8, 'min': 2, 'max': 30},
-                   'ray_max'        : {'default': 50,'min': 10,'max': 100},
-                   'point_radius'   : {'default': 5, 'min': 2, 'max': 100}};
+  this.settings = {'game_width'     : {'type': 'range', 'default': 800, 'min': 200, 'max': 1200},
+                   'game_height'    : {'type': 'range', 'default': 600, 'min': 200, 'max': 1200},
+                   'game_color'     : {'type': 'color', 'default': '#000000'},
+                   'char_radius'    : {'type': 'range', 'default': 20, 'min': 10, 'max': 150},
+                   'char_color'     : {'type': 'color', 'default': '#FFFF00'},
+                   'char_speed'     : {'type': 'range', 'default': 5, 'min': 2, 'max': 30},
+                   'char_lives'     : {'type': 'number','default': 3, 'min': 1, 'max': 10},
+                   'ray_length'     : {'type': 'range', 'default': 200, 'min': 50, 'max': 400},
+                   'ray_speed_min'  : {'type': 'range', 'default': 5, 'min': 1, 'max': 20},
+                   'ray_speed_max'  : {'type': 'range', 'default': 8, 'min': 2, 'max': 30},
+                   'ray_max'        : {'type': 'number','default': 50,'min': 10,'max': 100},
+                   'point_radius'   : {'type': 'range', 'default': 5, 'min': 2, 'max': 100}};
 }
 
 Settings.prototype.get_setting = function(name){
@@ -41,14 +41,13 @@ Settings.prototype.create_table = function(){
         var value   = document.createElement('td');
         var input   = document.createElement('input');
         setting.appendChild(document.createTextNode(key));
+        input.setAttribute('type',this.settings[key]['type']);
         if('min' in this.settings[key]){
-          input.setAttribute('type','range');
           input.setAttribute('min',this.settings[key]['min']);
           input.setAttribute('max',this.settings[key]['max']);
           input.setAttribute('value',this.settings[key]['default']);
         }
         else{
-          input.setAttribute('type','color');
           input.value = this.settings[key]['default'];
         }
         input.setAttribute('id',key);
