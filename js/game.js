@@ -246,10 +246,10 @@ Pacman.prototype.animate = function(){
 }
 
 Pacman.prototype.move = function(keycode){
-    this.old_xy = this.xy;
     this.xy = [this.xy[0] + this.dpad_map[keycode][0], this.xy[1] + this.dpad_map[code][1]];
     this.direction = keycode;
     this.wrap_it();
+    this.old_xy = [this.xy[0] - this.dpad_map[keycode][0], this.xy[1] - this.dpad_map[code][1]];
     this.animate();
 }
 
@@ -505,7 +505,6 @@ Game = function(){
   }
 
   this.got_it = function(){
-    //if(Math.pow(this.pacman.xy[0] - this.point.xy[0], 2) + Math.pow(this.pacman.xy[1] - this.point.xy[1], 2) <= (this.point_radius+5)*(this.point_radius+5))
     if(this.is_collision(this.pacman.xy,this.pacman.old_xy,this.point.xy,this.point_radius_squared))
       return true;
     return false;
