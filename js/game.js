@@ -84,26 +84,65 @@ Point.prototype.draw = function(ctx){
     ctx.fill();
 }
 
-var Ray = function(x,y,direction,x_bound,y_bound, speed_range, length){
+var Movement = function(directions){
+  this.left    = directions['left'];
+  this.right   = directions['right'];
+  this.up      = directions['up'];
+  this.down    = directions['down'];
+  this.neutral = directions['neutral'];
+
+
+  this.set_direction = function(dir){
+    this.direction = dir;
+  }
+
+  this.get_start_map = function(x,y,x_bound,y_bound){
+    var start_map         = {};
+    start_map[this.left]  = [x_bound,y];
+    start_map[this.up]    = [x,y_bound],
+    start_map[this.right] = [0,y],
+    start_map[this.down]  = [x,0];
+    return start_map;
+  }
+
+  this.get_move_map = function(speed){
+    var move_map         = {};
+    move_map[this.left]  = [-speed,0];
+    move_map[this.up]    = [0,-speed];
+    move_map[this.right] = [speed,0];
+    move_map[this.down]  = [0,speed];
+    return move_map;
+  }
+
+  this.get_end_map = function(length){
+    var end_map         = {};
+    end_map[this.left]  = [length,0];
+    end_map[this.up]    = [0,length];
+    end_map[this.right] = [-length,0];
+    end_map[this.down]  = [0,-length];
+    return end_map
+  }
+
+  this.get_wrap_map = function(x_bound,y_bound,radius){
+    var wrap_map         = {};
+    wrap_map[this.left]  = -radius;
+    wrap_map[this.up]    = -radius;
+    wrap_map[this.right] = x_bound+radius;
+    wrap_map[this.down]  = y_bound+radius;
+    return wrap_map;
+  }
+}
+
+var Ray = function(x,y,direction,x_bound,y_bound, speed_range, length, directions){
   this.speed     = get_random_int(speed_range[0],speed_range[1]);
   this.direction = direction;
   this.color     = 'red';
   this.length    = length;
   this.xy_bound  = [x_bound,y_bound];
-
-  this.start_map = {37: [x_bound,y],
-                    38: [x,y_bound],
-                    39: [0,y],
-                    40: [x,0]};
-  this.move_map  = {37: [-this.speed,0],
-                    38: [0,-this.speed],
-                    39: [this.speed,0],
-                    40: [0,this.speed]};
-  this.end_map   = {37: [this.length,0],
-                    38: [0,this.length],
-                    39: [-this.length,0],
-                    40: [0,-this.length]};
-
+  this.movement  = new Movement(directions);
+  this.start_map = this.movement.get_start_map(x,y,x_bound,y_bound);
+  this.move_map  = this.movement.get_move_map(this.speed);
+  this.end_map   = this.movement.get_end_map(this.length);
   this.xy = this.start_map[this.direction];
   this.end_xy = this.xy;
 }
@@ -116,16 +155,16 @@ Ray.prototype.draw = function(ctx){
 }
 
 Ray.prototype.should_wrap = function(){
-    if(this.direction == 37){
+    if(this.direction == this.movement.left){
       if(this.xy[0]+this.end_map[this.direction][0] < 0) return true;
     }
-    else if(this.direction == 38){
+    else if(this.direction == this.movement.up){
       if(this.xy[1]+this.end_map[this.direction][1] < 0) return true;
     }
-    else if(this.direction == 39){
+    else if(this.direction == this.movement.right){
       if(this.xy[0]+this.end_map[this.direction][0] > this.xy_bound[0]) return true;
     }
-    else if(this.direction == 40){
+    else if(this.direction == this.movement.down){
       if(this.xy[1]+this.end_map[this.direction][1] > this.xy_bound[1]) return true;
     }
     return false;
@@ -142,25 +181,16 @@ Ray.prototype.move = function(){
     this.end_xy = [this.xy[0]+this.end_map[this.direction][0], this.xy[1]+this.end_map[this.direction][1]];
 }
 
-var Pacman = function(x,y,r,speed,color,x_bound,y_bound,bgcolor){
+var Pacman = function(x,y,r,speed,color,x_bound,y_bound,bgcolor,directions){
   this.xy       = [x,y];
   this.radius   = r;
   this.color    = color;
   this.speed    = speed;
   this.bgcolor  = bgcolor
-  /* 37 = LEFT
-     38 = UP
-     39 = RIGHT
-     40 = DOWN */
-  this.dpad_map = {37: [-this.speed, 0],
-                   38: [0, -this.speed],
-                   39: [this.speed, 0],
-                   40: [0, this.speed]};
-  this.wrap_map = {37: -this.radius,
-                   38: -this.radius,
-                   39: x_bound+this.radius,
-                   40: y_bound+this.radius};
-  this.direction = 39;
+  this.movement = new Movement(directions);
+  this.dpad_map = this.movement.get_move_map(speed);
+  this.wrap_map = this.movement.get_wrap_map(x_bound,y_bound,r);
+  this.direction = this.movement.right;
   this.phase = 5;
   this.mod_map = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 0.8, 0.6, 0.4, 0.2]
 }
@@ -178,10 +208,14 @@ Pacman.prototype.draw = function(ctx){
 Pacman.prototype.draw_triangle = function(ctx){
     /* TRIANGLE */
   var triangle = []
-    if(this.direction == 37) triangle = [-this.radius, Math.floor(-this.radius*this.mod_map[this.phase]),-this.radius,Math.floor(this.radius*this.mod_map[this.phase])];
-    else if(this.direction == 38) triangle = [Math.floor(-this.radius*this.mod_map[this.phase]),-this.radius,Math.floor(this.radius*this.mod_map[this.phase]),-this.radius];
-    else if(this.direction == 39) triangle = [this.radius, Math.floor(-this.radius*this.mod_map[this.phase]),this.radius,Math.floor(this.radius*this.mod_map[this.phase])];
-    else triangle = [Math.floor(-this.radius*this.mod_map[this.phase]),this.radius,Math.floor(this.radius*this.mod_map[this.phase]),this.radius];
+    if(this.direction == this.movement.left)
+      triangle = [-this.radius, Math.floor(-this.radius*this.mod_map[this.phase]),-this.radius,Math.floor(this.radius*this.mod_map[this.phase])];
+    else if(this.direction == this.movement.up)
+      triangle = [Math.floor(-this.radius*this.mod_map[this.phase]),-this.radius,Math.floor(this.radius*this.mod_map[this.phase]),-this.radius];
+    else if(this.direction == this.movement.right)
+      triangle = [this.radius, Math.floor(-this.radius*this.mod_map[this.phase]),this.radius,Math.floor(this.radius*this.mod_map[this.phase])];
+    else 
+      triangle = [Math.floor(-this.radius*this.mod_map[this.phase]),this.radius,Math.floor(this.radius*this.mod_map[this.phase]),this.radius];
 
     ctx.beginPath();
     ctx.moveTo(this.xy[0], this.xy[1]);
@@ -192,17 +226,17 @@ Pacman.prototype.draw_triangle = function(ctx){
 }
 
 Pacman.prototype.wrap_it = function(){
-    if(this.direction == 37){
-      if(this.xy[0] < this.wrap_map[37]) this.xy[0] = this.wrap_map[39];
+    if(this.direction == this.movement.left){
+      if(this.xy[0] < this.wrap_map[this.movement.left]) this.xy[0] = this.wrap_map[this.movement.right];
     }
-    else if(this.direction == 38){
-      if(this.xy[1] < this.wrap_map[38]) this.xy[1] = this.wrap_map[40];
+    else if(this.direction == this.movement.up){
+      if(this.xy[1] < this.wrap_map[this.movement.up]) this.xy[1] = this.wrap_map[this.movement.down];
     }
-    else if(this.direction == 39){
-      if(this.xy[0] > this.wrap_map[39]) this.xy[0] = this.wrap_map[37];
+    else if(this.direction == this.movement.right){
+      if(this.xy[0] > this.wrap_map[this.movement.right]) this.xy[0] = this.wrap_map[this.movement.left];
     }
-    else if(this.direction == 40){
-      if(this.xy[1] > this.wrap_map[40]) this.xy[1] = this.wrap_map[38];
+    else if(this.direction == this.movement.down){
+      if(this.xy[1] > this.wrap_map[this.movement.down]) this.xy[1] = this.wrap_map[this.movement.up];
     }
 }
 
@@ -392,9 +426,24 @@ Game = function(){
     instance.c.height = instance.game_height;
     instance.c.width  = instance.game_width;
     instance.context = instance.c.getContext('2d');
-    instance.backdrop = new Rectangle(0,0,instance.game_width,instance.game_height,instance.game_color);
-    instance.pacman = new Pacman(instance.backdrop.w/2,instance.backdrop.h/2,instance.char_radius,instance.char_speed,instance.char_color,instance.game_width,instance.game_height,instance.game_color);
-    instance.point = new Point(instance.point_radius,instance.game_width, instance.game_height);
+    instance.directions = {'left': 37, 'up': 38, 'right': 39, 'down': 40, 'neutral': 32};
+    instance.backdrop = new Rectangle(0,
+                                      0,
+                                      instance.game_width,
+                                      instance.game_height,
+                                      instance.game_color);
+    instance.pacman = new Pacman(instance.backdrop.w/2,
+                                 instance.backdrop.h/2,
+                                 instance.char_radius,
+                                 instance.char_speed,
+                                 instance.char_color,
+                                 instance.game_width,
+                                 instance.game_height,
+                                 instance.game_color,
+                                 instance.directions);
+    instance.point = new Point(instance.point_radius,
+                               instance.game_width,
+                               instance.game_height);
     instance.rays = [];
     instance.ray_max = instance.settings.get_setting('ray_max');
   }
@@ -410,12 +459,10 @@ Game = function(){
 
   this.start = function(){
     console.log('In Game start function');
-    //instance.settings.create_table();
-    //instance.scoreboard.create_stats_table();
     instance.init_settings();
     instance.statsboard.set_life_count(instance.char_lives);
     instance.draw();
-    document.addEventListener('keydown', instance.handle_input)
+    document.addEventListener('keydown', instance.handle_input);
     document.getElementById('restart').addEventListener('click', instance.start);
   }
 
@@ -435,7 +482,7 @@ Game = function(){
         start_xy = this.rays[i].xy;
         end_xy = this.rays[i].end_xy;
       }
-      if(this.rays[i].direction == 37 || this.rays[i].direction == 39){
+      if(this.rays[i].direction == this.directions['left'] || this.rays[i].direction == this.directions['right']){
         perp_point = [this.pacman.xy[0], start_xy[1]];
         if(perp_point[0] > start_xy[0] && perp_point[0] < end_xy[0]){
           if(Math.pow(perp_point[1] - this.pacman.xy[1],2) <= this.radius_squared)
@@ -448,7 +495,7 @@ Game = function(){
             return true;
         }
       }
-      else if(this.rays[i].direction == 38 || this.rays[i].direction == 40){
+      else if(this.rays[i].direction == this.directions['up'] || this.rays[i].direction == this.directions['down']){
         perp_point = [start_xy[0], this.pacman.xy[1]];
         if(perp_point[1] > start_xy[1] && perp_point[1] < end_xy[1]){
           if(Math.pow(perp_point[0] - this.pacman.xy[0],2) <= this.radius_squared)
@@ -469,29 +516,57 @@ Game = function(){
     for(var i = 0; i < this.rays.length; i++){
       this.rays[i].wrap_it();
     }
-    this.pacman = new Pacman(this.backdrop.w/2,this.backdrop.h/2,this.char_radius,this.char_speed,this.char_color,this.game_width,this.game_height,this.game_color);
+    this.pacman = new Pacman(this.backdrop.w/2,
+                             this.backdrop.h/2,
+                             this.char_radius,
+                             this.char_speed,
+                             this.char_color,
+                             this.game_width,
+                             this.game_height,
+                             this.game_color,
+                             this.directions);
   }
 
   this.restart_game = function(){
     instance.scoreboard.submit_score(instance.score);
     instance.scoreboard.create_scores_table();
     instance.init_settings();
+    instance.statsboard.set_life_count(instance.char_lives);
+    instance.draw();
+  }
+
+  this.is_direction = function(code){
+    for(var i in this.directions){
+      if(this.directions[i] === code) return true;
+    }
+    return false;
   }
 
   this.handle_input = function(event){
     code = parseInt(event.keycode || event.which);
-    if((code <= 40 && code >= 37) || (code == 32)){
-      if(code != 32) instance.pacman.move(code);
+    if(instance.is_direction(code)){
+      event.preventDefault();
+      if(code !== instance.directions['neutral']) instance.pacman.move(code);
       else instance.pacman.animate();
       for(var i = 0; i < instance.rays.length; i++){
         instance.rays[i].move();
       }
       if(instance.got_it()){
         if(instance.rays.length < instance.ray_max){
-          instance.rays.push(new Ray(instance.pacman.xy[0],instance.pacman.xy[1],instance.pacman.direction,instance.backdrop.w,instance.backdrop.h,instance.ray_speed_range,instance.ray_length));
+          instance.rays.push(new Ray(instance.pacman.xy[0],
+                                     instance.pacman.xy[1],
+                                     instance.pacman.direction,
+                                     instance.backdrop.w,
+                                     instance.backdrop.h,
+                                     instance.ray_speed_range,
+                                     instance.ray_length,
+                                     instance.directions));
+
           instance.statsboard.set_laser_count(instance.rays.length);
         }
-        instance.point = new Point(instance.point_radius,instance.backdrop.w, instance.backdrop.h);
+        instance.point = new Point(instance.point_radius,
+                                   instance.backdrop.w,
+                                   instance.backdrop.h);
         instance.score += 10;
         instance.statsboard.set_score_count(instance.score);
       }
