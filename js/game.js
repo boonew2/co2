@@ -472,42 +472,45 @@ Game = function(){
     return false;
   }
 
+  this.copy_xy= function(xy){
+    var temp = [];
+    temp[0]  = xy[0];
+    temp[1]  = xy[1];
+    return temp;
+  }
+
+  this.is_collision = function(line_start_xy,line_end_xy,point_xy,radius_squared){
+    var start_xy   = this.copy_xy(line_start_xy);
+    var end_xy     = this.copy_xy(line_end_xy);
+    var center_xy  = this.copy_xy(point_xy);
+    var perp_point = [];
+    if (start_xy[0] > end_xy[0] || start_xy[1] > end_xy[1]){
+      start_xy = this.copy_xy(line_end_xy);
+      end_xy   = this.copy_xy(line_start_xy);
+    }
+    if(start_xy[1] !== end_xy[1]){
+      start_xy.reverse();
+      end_xy.reverse();
+      center_xy.reverse();
+    }
+    perp_point = [center_xy[0],start_xy[1]];
+
+    if(perp_point[0] > start_xy[0] && perp_point[0] < end_xy[0]){
+      if(Math.pow(perp_point[1] - center_xy[1],2) <= radius_squared)
+        return true;
+      }
+    else{
+      start_dist = Math.pow(perp_point[1] - center_xy[1],2)+Math.pow(perp_point[0] - start_xy[0],2);
+      end_dist   = Math.pow(perp_point[1] - center_xy[1],2)+Math.pow(perp_point[0] - end_xy[0],2);
+      if(start_dist <= radius_squared || end_dist <= radius_squared)
+        return true;
+      }
+    return false;
+  }
+
   this.got_hit = function(){
     for(var i = 0; i < this.rays.length; i++){
-      if (this.rays[i].xy[0] > this.rays[i].end_xy[0] || this.rays[i].xy[1] > this.rays[i].end_xy[1]){
-        start_xy = this.rays[i].end_xy;
-        end_xy = this.rays[i].xy;
-      }
-      else{
-        start_xy = this.rays[i].xy;
-        end_xy = this.rays[i].end_xy;
-      }
-      if(this.rays[i].direction == this.directions['left'] || this.rays[i].direction == this.directions['right']){
-        perp_point = [this.pacman.xy[0], start_xy[1]];
-        if(perp_point[0] > start_xy[0] && perp_point[0] < end_xy[0]){
-          if(Math.pow(perp_point[1] - this.pacman.xy[1],2) <= this.radius_squared)
-            return true;
-        }
-        else{
-          start_dist = Math.pow(perp_point[1] - this.pacman.xy[1],2)+Math.pow(perp_point[0] - start_xy[0],2);
-          end_dist   = Math.pow(perp_point[1] - this.pacman.xy[1],2)+Math.pow(perp_point[0] - end_xy[0],2);
-          if(start_dist <= this.radius_squared || end_dist <= this.radius_squared)
-            return true;
-        }
-      }
-      else if(this.rays[i].direction == this.directions['up'] || this.rays[i].direction == this.directions['down']){
-        perp_point = [start_xy[0], this.pacman.xy[1]];
-        if(perp_point[1] > start_xy[1] && perp_point[1] < end_xy[1]){
-          if(Math.pow(perp_point[0] - this.pacman.xy[0],2) <= this.radius_squared)
-            return true;
-        }
-        else{
-          start_dist = Math.pow(perp_point[0] - this.pacman.xy[0],2)+Math.pow(perp_point[1] - start_xy[1],2);
-          end_dist   = Math.pow(perp_point[0] - this.pacman.xy[0],2)+Math.pow(perp_point[1] - end_xy[1],2);
-          if(start_dist <= this.radius_squared || end_dist <= this.radius_squared)
-            return true;
-        }
-      }
+      if(this.is_collision(this.rays[i].xy,this.rays[i].end_xy,this.pacman.xy,this.radius_squared)) return true;
     }
     return false;
   }
