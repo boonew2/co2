@@ -1,5 +1,11 @@
 var Settings = function(id){
+// The Settings object handles the creation of the html settings table
+// and retrieving the values as well.
+// Takes in the id of the div that the table should be created in
   this.settings_div = document.getElementById(id);
+  // This JSON object maps to all the different settings.
+  // The type attribute maps directly to the 'input' type attribute.
+  // If a min/max is specified it is enforced by an alert to the user
   this.settings = {'game_width'     : {'type': 'range', 'default': 800, 'min': 200, 'max': 1200},
                    'game_height'    : {'type': 'range', 'default': 600, 'min': 200, 'max': 1200},
                    'game_color'     : {'type': 'color', 'default': '#000000'},
@@ -15,6 +21,8 @@ var Settings = function(id){
 }
 
 Settings.prototype.get_setting = function(name){
+// Retrieves specified setting value from the settings table.
+// If it is outside of declared bounds the default is returned and an alert is created
     value = document.getElementById(name).value;
     if('min' in this.settings[name]){
       value = parseInt(value);
@@ -71,12 +79,17 @@ Settings.prototype.create_table = function(){
 }
 
 var Point = function(radius,x_bound,y_bound){
+// The Point object places the 'point' somewhere within the game space at random.
+// Constructor needs the radius of the point and the width/height of the game space
   this.radius    = radius;
   this.xy        = [get_random_int(this.radius,x_bound - this.radius), get_random_int(this.radius, y_bound - this.radius)]
   this.color     = 'white';
 }
 
 Point.prototype.draw = function(ctx){
+// Handles drawing the object on the game space canvas
+// Point is a simple circle
+// Takes the 2D canvas as an arg
     ctx.beginPath();
     ctx.arc(this.xy[0],this.xy[1],this.radius,0,2*Math.PI);
     ctx.fillStyle = this.color;
@@ -84,18 +97,18 @@ Point.prototype.draw = function(ctx){
 }
 
 var Movement = function(directions){
+// The Movement object is used to map the event codes that are triggered
+// from the keydown event to the directions.
   this.left    = directions['left'];
   this.right   = directions['right'];
   this.up      = directions['up'];
   this.down    = directions['down'];
   this.neutral = directions['neutral'];
 
-
-  this.set_direction = function(dir){
-    this.direction = dir;
-  }
-
   this.get_start_map = function(x,y,x_bound,y_bound){
+  // start_map is utilized by the Ray objects to determine the
+  // starting position of the rays.
+  // Takes in the xy coords of pacman's center and the width/height of the game space
     var start_map         = {};
     start_map[this.left]  = [x_bound,y];
     start_map[this.up]    = [x,y_bound],
@@ -105,6 +118,9 @@ var Movement = function(directions){
   }
 
   this.get_move_map = function(speed){
+  // move_map is utilized by the Ray and Pacman object to determine the next
+  // position of the objects.
+  // Takes in the speed of the objects as an arg
     var move_map         = {};
     move_map[this.left]  = [-speed,0];
     move_map[this.up]    = [0,-speed];
@@ -114,6 +130,9 @@ var Movement = function(directions){
   }
 
   this.get_end_map = function(length){
+  // end_map is utilized by the Ray object to determine the ending coords
+  // of the ray.
+  // Takes in the length of the rays as an arg
     var end_map         = {};
     end_map[this.left]  = [length,0];
     end_map[this.up]    = [0,length];
@@ -123,6 +142,9 @@ var Movement = function(directions){
   }
 
   this.get_wrap_map = function(x_bound,y_bound,radius){
+  // wrap_map is utilized by the Pacman object
+  // Takes in the width/height of the games space and the radius of pacman.
+  // Radius is used as an offset so that it wraps at the appropriate time.
     var wrap_map         = {};
     wrap_map[this.left]  = -radius;
     wrap_map[this.up]    = -radius;
@@ -133,6 +155,7 @@ var Movement = function(directions){
 }
 
 var Ray = function(x,y,direction,x_bound,y_bound, speed_range, length, directions){
+// Ray object handles drawing/moving the rays into the gamespace
   this.speed     = get_random_int(speed_range[0],speed_range[1]);
   this.direction = direction;
   this.color     = 'red';
@@ -146,6 +169,9 @@ var Ray = function(x,y,direction,x_bound,y_bound, speed_range, length, direction
   this.end_xy = this.xy;
 }
 Ray.prototype.draw = function(ctx){
+// Handles drawing the object on the game space canvas
+// Ray is a line
+// Takes the 2D canvas as an arg
     ctx.beginPath();
     ctx.moveTo(this.xy[0], this.xy[1]);
     ctx.lineTo(this.end_xy[0], this.end_xy[1]);
@@ -154,6 +180,7 @@ Ray.prototype.draw = function(ctx){
 }
 
 Ray.prototype.should_wrap = function(){
+// Determines if a ray should 'wrap'
     if(this.direction == this.movement.left){
       if(this.xy[0]+this.end_map[this.direction][0] < 0) return true;
     }
@@ -170,17 +197,20 @@ Ray.prototype.should_wrap = function(){
 }
 
 Ray.prototype.wrap_it = function(){
+// Actually resets the coords of the ray to its starting point
     this.xy = this.start_map[this.direction];
     this.end_xy = this.xy;
 }
 
 Ray.prototype.move = function(){
+// Adjusts the ray's positions accordingly based off of the move_map object
     this.xy = [this.xy[0]+this.move_map[this.direction][0], this.xy[1]+this.move_map[this.direction][1]];
     if(this.should_wrap()) this.wrap_it();
     this.end_xy = [this.xy[0]+this.end_map[this.direction][0], this.xy[1]+this.end_map[this.direction][1]];
 }
 
 var Pacman = function(x,y,r,speed,color,x_bound,y_bound,bgcolor,directions){
+// The Pacman object draws/moves/animates the character
   this.xy       = [x,y];
   this.old_xy   = [x,y];
   this.radius   = r;
@@ -188,7 +218,7 @@ var Pacman = function(x,y,r,speed,color,x_bound,y_bound,bgcolor,directions){
   this.speed    = speed;
   this.bgcolor  = bgcolor
   this.movement = new Movement(directions);
-  this.dpad_map = this.movement.get_move_map(speed);
+  this.move_map = this.movement.get_move_map(speed);
   this.wrap_map = this.movement.get_wrap_map(x_bound,y_bound,r);
   this.direction = this.movement.right;
   this.phase = 5;
@@ -196,26 +226,16 @@ var Pacman = function(x,y,r,speed,color,x_bound,y_bound,bgcolor,directions){
 }
 
 Pacman.prototype.draw = function(ctx){
-    /* Draw base circle */
+// Handles drawing the object on the game space canvas
+// Main body is a simple circle, and the animated mouth is
+// created by drawing a triangle that is the same color as the background
+// Takes the 2D canvas as an arg
     ctx.beginPath();
     ctx.arc(this.xy[0],this.xy[1],this.radius,0,2*Math.PI);
     ctx.fillStyle = this.color;
     ctx.fill();
 
-    this.draw_triangle(ctx);
-}
-
-Pacman.prototype.draw_triangle = function(ctx){
-    /* TRIANGLE */
-  var triangle = []
-    if(this.direction == this.movement.left)
-      triangle = [-this.radius, Math.floor(-this.radius*this.mod_map[this.phase]),-this.radius,Math.floor(this.radius*this.mod_map[this.phase])];
-    else if(this.direction == this.movement.up)
-      triangle = [Math.floor(-this.radius*this.mod_map[this.phase]),-this.radius,Math.floor(this.radius*this.mod_map[this.phase]),-this.radius];
-    else if(this.direction == this.movement.right)
-      triangle = [this.radius, Math.floor(-this.radius*this.mod_map[this.phase]),this.radius,Math.floor(this.radius*this.mod_map[this.phase])];
-    else 
-      triangle = [Math.floor(-this.radius*this.mod_map[this.phase]),this.radius,Math.floor(this.radius*this.mod_map[this.phase]),this.radius];
+    triangle = this.get_triangle(ctx);
 
     ctx.beginPath();
     ctx.moveTo(this.xy[0], this.xy[1]);
@@ -225,7 +245,23 @@ Pacman.prototype.draw_triangle = function(ctx){
     ctx.fill();
 }
 
+Pacman.prototype.get_triangle = function(ctx){
+// This function determines the other coords of the
+// triangle that are used to draw pacman's mouth
+  var triangle = []
+    if(this.direction == this.movement.left)
+      triangle = [-this.radius, Math.floor(-this.radius*this.mod_map[this.phase]),-this.radius,Math.floor(this.radius*this.mod_map[this.phase])];
+    else if(this.direction == this.movement.up)
+      triangle = [Math.floor(-this.radius*this.mod_map[this.phase]),-this.radius,Math.floor(this.radius*this.mod_map[this.phase]),-this.radius];
+    else if(this.direction == this.movement.right)
+      triangle = [this.radius, Math.floor(-this.radius*this.mod_map[this.phase]),this.radius,Math.floor(this.radius*this.mod_map[this.phase])];
+    else 
+      triangle = [Math.floor(-this.radius*this.mod_map[this.phase]),this.radius,Math.floor(this.radius*this.mod_map[this.phase]),this.radius];
+    return triangle;
+}
+
 Pacman.prototype.wrap_it = function(){
+// Wraps pacman to the other side of the game space when needed
     if(this.direction == this.movement.left){
       if(this.xy[0] < this.wrap_map[this.movement.left]) this.xy[0] = this.wrap_map[this.movement.right];
     }
@@ -241,19 +277,26 @@ Pacman.prototype.wrap_it = function(){
 }
 
 Pacman.prototype.animate = function(){
+// Used to cycle through the 'phases' of the triangle that create the mouth
     if(this.phase < this.mod_map.length-1) this.phase++
     else this.phase = 0;
 }
 
 Pacman.prototype.move = function(keycode){
-    this.xy = [this.xy[0] + this.dpad_map[keycode][0], this.xy[1] + this.dpad_map[code][1]];
+// Moves pacmans center coords and calculates the last coords.
+// Last coords are calculated instead of just changed before updating current coords
+// to fix a bug with the collision detection when getting the points due to the screen wrapping
+// Takes the event code as an arg
+    this.xy = [this.xy[0] + this.move_map[keycode][0], this.xy[1] + this.move_map[code][1]];
     this.direction = keycode;
     this.wrap_it();
-    this.old_xy = [this.xy[0] - this.dpad_map[keycode][0], this.xy[1] - this.dpad_map[code][1]];
+    this.old_xy = [this.xy[0] - this.move_map[keycode][0], this.xy[1] - this.move_map[code][1]];
     this.animate();
 }
 
 var Rectangle = function(x,y,w,h,color){
+// Rectangle handles the drawing of the game space.
+// Takes xy starting coords, width/height of game space, and the color
   this.x = x;
   this.y = y;
   this.w = w;
@@ -262,16 +305,24 @@ var Rectangle = function(x,y,w,h,color){
 }
 
 Rectangle.prototype.draw = function(ctx){
+// Handles drawing the game space
+// Takes the 2D canvas as an arg
     ctx.fillStyle = this.color;
     ctx.fillRect(this.x, this.y, this.w, this.h);
 }
 
 var ScoreBoard = function(scores_id){
+// The Scoreboard object creates the html table and maintains 
+// the client side cookie that tracks scores
+// Takes the score div id as an arg
   this.scores_div = document.getElementById(scores_id);
   this.top_scores = [];
 }
 
 ScoreBoard.prototype.set_cookie = function(){
+// Creates a cookie (top_scores) that stores the score list.
+// Score list is a stringified array
+// Cookie expires after a week
   var d = new Date();
   d.setTime(d.getTime() + (7*24*60*60*1000));
   var expires = "expires=" + d.toGMTString();
@@ -279,6 +330,7 @@ ScoreBoard.prototype.set_cookie = function(){
 }
 
 ScoreBoard.prototype.get_cookie = function(){
+// Retrieves cookie by the name of top_scores.
   var name = 'top_scores=';
   var ca = document.cookie.split(';');
   for(var i = 0; i < ca.length; i++){
@@ -292,10 +344,13 @@ ScoreBoard.prototype.get_cookie = function(){
 }
 
 ScoreBoard.prototype.initiate_scores = function(){
+// Prefills the top_scores variable with the client cookie
+// if one is available
   this.top_scores = this.get_cookie();
 }
 
 ScoreBoard.prototype.create_scores_table = function(){
+// Creates the html table that lists the top ten top scores
   while(this.scores_div.childNodes.length > 0){
     this.scores_div.removeChild(this.scores_div.firstChild);
   }
@@ -323,6 +378,9 @@ ScoreBoard.prototype.create_scores_table = function(){
 }
 
 ScoreBoard.prototype.submit_score = function(score){
+// Adds a score to the top_scrores array.
+// Array is sorted in descending order and truncated to
+// only ten items
   this.top_scores.push(score);
   this.top_scores.sort(function(a, b){return b-a});
   while(this.top_scores.length > 10){
@@ -332,10 +390,13 @@ ScoreBoard.prototype.submit_score = function(score){
 }
 
 var StatsBoard = function(stats_id){
+// Creates a html table that displays life/laser/score count
+// Takes the stats div id as an arg
   this.stats_div  = document.getElementById(stats_id);
 }
 
 StatsBoard.prototype.create_stats_table = function(){
+// Actually creates the html table that displays things
   var table       = document.createElement('table');
   var row         = document.createElement('tr');
   var score_title = document.createElement('th');
@@ -383,22 +444,28 @@ StatsBoard.prototype.create_stats_table = function(){
 }
 
 StatsBoard.prototype.set_life_count = function(life_count){
+// Sets the value of the life count
   document.getElementById(this.stats_div.id+'_life_count').value = life_count;
 }
 
 StatsBoard.prototype.set_laser_count = function(laser_count){
+// Sets the value of the laser count
   document.getElementById(this.stats_div.id+'_laser_count').value = laser_count;
 }
 
 StatsBoard.prototype.set_score_count = function(score_count){
+// Sets the value of the score count
   document.getElementById(this.stats_div.id+'_score_count').value = score_count;
 }
 
-function get_random_int(min, max) {
+function get_random_int(min, max){
+// Helper function that returns a random integer in specified range
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 Game = function(){
+// Wrapper that ties the other objects together.
+// Initializes all settings and handles the game mechanics
   console.log('Starting instance of Game');
   this.settings = new Settings('settings');
   this.statsboard = new StatsBoard('stats');
@@ -410,6 +477,8 @@ Game = function(){
   var instance = this;
 
   this.init_settings = function(){
+  // Initializes all settings needed to create the needed objects.
+  // For the most part all settings are grabbed from the settings table
     console.log('Initializing game settings');
     instance.game_width           = instance.settings.get_setting('game_width');
     instance.game_height          = instance.settings.get_setting('game_height');
@@ -451,6 +520,8 @@ Game = function(){
   }
 
   this.draw = function(){
+  // Triggers the individual 'draw' functions of all the objects.
+  // The order is somewhat important for everything to look correct.
     this.backdrop.draw(this.context);
     this.pacman.draw(this.context);
     for(var i = 0; i < this.rays.length; i++){
@@ -460,6 +531,7 @@ Game = function(){
   }
 
   this.start = function(){
+  // Registers the event listeners and initializes the game
     console.log('In Game start function');
     instance.init_settings();
     instance.statsboard.set_life_count(instance.char_lives);
@@ -469,6 +541,8 @@ Game = function(){
   }
 
   this.copy_xy= function(xy){
+  // Helper function to copy a coord array because it turns out
+  // that javascripts assignment operator is by reference and not value.. who knew
     var temp = [];
     temp[0]  = xy[0];
     temp[1]  = xy[1];
@@ -476,6 +550,16 @@ Game = function(){
   }
 
   this.is_collision = function(line_start_xy,line_end_xy,point_xy,radius_squared){
+  // Determines if a collision has occured between a line and circle.
+  // High level logic is this:
+  //  1. Determine the point perpendicular to the center of the circle and the appropriate axis of the line
+  //  2. If that point falls within the line then determine if the distance between the
+  //     center point and the line is less than the radius of the circle. If so there is a collision
+  //  3. If the point is not on the line then determine the distance between the start and end points
+  //     of the line. If either are less than the radius then there is a collision
+  //  Some data massaging is done before that logic is ran through to make the same code check for
+  //  all directions and orientations of lines and circles.
+  //  If the line is vertically oriented than the game space is translated 90 degrees
     var start_xy   = this.copy_xy(line_start_xy);
     var end_xy     = this.copy_xy(line_end_xy);
     var center_xy  = this.copy_xy(point_xy);
@@ -505,12 +589,16 @@ Game = function(){
   }
 
   this.got_it = function(){
+  // Checks to see if the character has collided with the point.
+  // The last and current coords of pacman's center are used to draw the 'line'
+  // needed for the 'is_collision' function.
     if(this.is_collision(this.pacman.xy,this.pacman.old_xy,this.point.xy,this.point_radius_squared))
       return true;
     return false;
   }
 
   this.got_hit = function(){
+  // Checks to see if any of the 'rays' are colliding with pacman
     for(var i = 0; i < this.rays.length; i++){
       if(this.is_collision(this.rays[i].xy,this.rays[i].end_xy,this.pacman.xy,this.radius_squared)) return true;
     }
@@ -518,6 +606,8 @@ Game = function(){
   }
 
   this.reset = function(){
+  // This is triggered when a life is lost and resets pacman's
+  // and all rays to their original position.
     for(var i = 0; i < this.rays.length; i++){
       this.rays[i].wrap_it();
     }
@@ -533,6 +623,7 @@ Game = function(){
   }
 
   this.restart_game = function(){
+  // Upon losing all lifes the game is completely re-initialized
     instance.scoreboard.submit_score(instance.score);
     instance.scoreboard.create_scores_table();
     instance.init_settings();
@@ -541,6 +632,8 @@ Game = function(){
   }
 
   this.is_direction = function(code){
+  // Determines if the event code is one that we
+  // care about at all.
     for(var i in this.directions){
       if(this.directions[i] === code) return true;
     }
@@ -548,6 +641,11 @@ Game = function(){
   }
 
   this.handle_input = function(event){
+  // Determines what happens when a key is pressed.
+  // If it is a direction then all objects are moved and redrawn.
+  // After everything has moved then all collisions are checked for.
+  // If any collisions have happened then the appropriate stats are
+  // updated and whatnot
     code = parseInt(event.keycode || event.which);
     if(instance.is_direction(code)){
       event.preventDefault();
