@@ -181,18 +181,10 @@ Ray.prototype.draw = function(ctx){
 
 Ray.prototype.should_wrap = function(){
 // Determines if a ray should 'wrap'
-    if(this.direction == this.movement.left){
-      if(this.xy[0]+this.end_map[this.direction][0] < 0) return true;
-    }
-    else if(this.direction == this.movement.up){
-      if(this.xy[1]+this.end_map[this.direction][1] < 0) return true;
-    }
-    else if(this.direction == this.movement.right){
-      if(this.xy[0]+this.end_map[this.direction][0] > this.xy_bound[0]) return true;
-    }
-    else if(this.direction == this.movement.down){
-      if(this.xy[1]+this.end_map[this.direction][1] > this.xy_bound[1]) return true;
-    }
+    if(this.direction == this.movement.left && (this.xy[0]+this.end_map[this.direction][0] < 0)) return true;
+    else if(this.direction == this.movement.up && (this.xy[1]+this.end_map[this.direction][1] < 0)) return true;
+    else if(this.direction == this.movement.right && (this.xy[0]+this.end_map[this.direction][0] > this.xy_bound[0])) return true;
+    else if(this.direction == this.movement.down && (this.xy[1]+this.end_map[this.direction][1] > this.xy_bound[1])) return true;
     return false;
 }
 
